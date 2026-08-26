@@ -20,10 +20,20 @@ module TTSmatsPro
       def initialize(thickness)
         @thickness = thickness
         @first_point = nil
+        @plane_index = nil
+        @planes = [[0, 1], [0, 2], [1, 2]]
+        @plane_names = ['Mặt phẳng Đỏ-Xanh lá (XY)', 'Mặt phẳng Đỏ-Xanh dương (XZ)', 'Mặt phẳng Xanh lá-Xanh dương (YZ)']
       end
 
       def activate
-        Sketchup.set_status_text('Click góc chéo thứ nhất của ván AUTU', SB_PROMPT)
+        update_prompt('Click góc chéo thứ nhất của ván AUTU')
+      end
+
+      def onKeyDown(key, _repeat, _flags, _view)
+        return unless key == 9
+
+        @plane_index = @plane_index.nil? ? 0 : (@plane_index + 1) % @planes.length
+        update_prompt('Click góc chéo thứ nhất của ván AUTU') unless @first_point
       end
 
       def onLButtonDown(_flags, x, y, view)
@@ -33,7 +43,7 @@ module TTSmatsPro
           Sketchup.active_model.select_tool(nil)
         else
           @first_point = point
-          Sketchup.set_status_text('Click góc chéo đối diện để tạo ván', SB_PROMPT)
+          update_prompt('Click góc chéo đối diện để tạo ván')
         end
       rescue StandardError => error
         UI.messagebox("Không thể tạo ván.\n#{error.message}")
@@ -44,7 +54,7 @@ module TTSmatsPro
 
         point = view.inputpoint(x, y).position
         dimensions = rectangle_dimensions(@first_point, point)
-        Sketchup.set_status_text("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo", SB_PROMPT)
+        update_prompt("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo")
       end
 
       def onCancel(_reason, _view)
@@ -54,16 +64,15 @@ module TTSmatsPro
       private
 
       def rectangle_dimensions(first_point, second_point)
-        delta = second_point - first_point
-        axes = [delta.x.abs, delta.y.abs, delta.z.abs].sort
-        [axes[2], axes[1]]
+        coordinates = second_point - first_point
+        axes = selected_plane(first_point, second_point)
+        [coordinates[axes[0]].abs, coordinates[axes[1]].abs].sort.reverse
       end
 
       def create_board(first_point, second_point)
         delta = second_point - first_point
         differences = [delta.x.abs, delta.y.abs, delta.z.abs]
-        normal_axis = differences.each_index.min_by { |index| differences[index] }
-        plane_axes = (0..2).to_a - [normal_axis]
+        plane_axes = selected_plane(first_point, second_point)
         raise 'Hai điểm phải khác nhau' if differences[plane_axes[0]] <= 0.001 || differences[plane_axes[1]] <= 0.001
 
         first_coordinates = [first_point.x, first_point.y, first_point.z]
@@ -89,6 +98,20 @@ module TTSmatsPro
       rescue StandardError => error
         model.abort_operation if model&.operation?
         UI.messagebox("Không thể tạo ván.\n#{error.message}")
+      end
+
+      def update_prompt(message)
+        direction = @plane_index ? @plane_names[@plane_index] : 'Tự động theo không gian'
+        Sketchup.set_status_text("#{message} | Tab: đổi hướng (#{direction})", SB_PROMPT)
+      end
+
+      def selected_plane(first_point, second_point)
+        return @planes[@plane_index] if @plane_index
+
+        delta = second_point - first_point
+        differences = [delta.x.abs, delta.y.abs, delta.z.abs]
+        normal_axis = differences.each_index.min_by { |index| differences[index] }
+        (0..2).to_a - [normal_axis]
       end
     end
   end
