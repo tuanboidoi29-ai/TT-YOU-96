@@ -3,12 +3,13 @@
 require 'json'
 require 'net/http'
 require 'rubygems/version'
+require 'uri'
 require 'sketchup.rb'
 require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.0.4'
+  VERSION = '1.0.5'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
@@ -24,7 +25,7 @@ module TTSmatsPro
     rescue StandardError => error
       UI.start_timer(0, false) { finish_update_check(error) }
     end
-    UI.start_timer(0, false) { UI.set_status_text('Đang kiểm tra bản cập nhật TT -SMATS PRO...') }
+    UI.start_timer(0, false) { Sketchup.set_status_text('Đang kiểm tra bản cập nhật TT -SMATS PRO...') }
   end
 
   def fetch_manifest
@@ -67,7 +68,7 @@ module TTSmatsPro
     rescue StandardError => error
       UI.start_timer(0, false) { finish_update_check(error) }
     end
-    UI.set_status_text('Đang tải bản cập nhật TT -SMATS PRO...')
+    Sketchup.set_status_text('Đang tải bản cập nhật TT -SMATS PRO...')
   end
 
   def download_archive(download_url)
