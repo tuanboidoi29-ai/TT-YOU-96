@@ -10,7 +10,7 @@ require File.join(__dir__, 'board')
 module TTSmatsPro
   VERSION = '1.0.2'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
-  MANIFEST_URL = "https://github.com/#{REPOSITORY}/raw/refs/heads/main/update.json"
+  MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
   module_function
 
@@ -31,6 +31,7 @@ module TTSmatsPro
     uri = URI(MANIFEST_URL)
     request = Net::HTTP::Get.new(uri)
     request['User-Agent'] = "TT-SMATS-PRO/#{VERSION}"
+    request['Accept'] = 'application/vnd.github.raw+json'
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 8) do |http|
       http.request(request)
     end
