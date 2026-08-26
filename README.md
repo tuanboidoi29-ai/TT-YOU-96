@@ -4,7 +4,7 @@ Extension SketchUp viết bằng Ruby, giao diện tiếng Việt.
 
 ## Chức năng
 
-- `Vẽ ván AUTU`: nhập Dài/Rộng/Dày, sau đó click điểm đặt trong model.
+- `Vẽ ván AUTU`: nhập Rộng/Dày, click điểm đầu và điểm cuối. Chiều dài, hướng và không gian 3D được suy ra từ hai điểm.
 - `Kiểm tra bản cập nhật`: gọi manifest GitHub không đồng bộ, không làm treo SketchUp khi khởi động.
 - Mỗi lệnh có callback Ruby riêng, menu trong `Extensions` và toolbar có icon.
 
@@ -12,7 +12,7 @@ Extension SketchUp viết bằng Ruby, giao diện tiếng Việt.
 
 1. Chép `tt_smats_pro.rb` và thư mục `tt_smats_pro` vào thư mục `Plugins` của SketchUp.
 2. Khởi động SketchUp. Vào `Extensions > TT -SMATS PRO RBZ`.
-3. Chạy `ruby package.rb` để tạo file `TT-SMATS-PRO-RBZ-v1.0.0.rbz`.
+3. Chạy `ruby package.rb` để tạo file RBZ theo version hiện tại.
 4. Cài RBZ bằng `Extension Manager > Install Extension`.
 
 ## Cập nhật GitHub

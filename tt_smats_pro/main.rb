@@ -8,7 +8,7 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.0.0'
+  VERSION = '1.0.1'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://raw.githubusercontent.com/#{REPOSITORY}/main/update.json"
 

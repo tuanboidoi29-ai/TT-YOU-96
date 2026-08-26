@@ -3,7 +3,8 @@
 require 'fileutils'
 
 root = File.expand_path(__dir__)
-output = File.join(root, 'TT-SMATS-PRO-RBZ-v1.0.0.rbz')
+version = File.read(File.join(root, 'tt_smats_pro', 'main.rb')).match(/VERSION = '([^']+)'/)[1]
+output = File.join(root, "TT-SMATS-PRO-RBZ-v#{version}.rbz")
 files = ['tt_smats_pro.rb', 'update.json']
 files << Dir[File.join(root, 'tt_smats_pro', '**', '*')].reject { |path| File.directory?(path) }.map { |path| path.delete_prefix("#{root}/") }
 files = files.flatten
