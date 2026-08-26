@@ -68,10 +68,22 @@ module TTSmatsPro
         return unless @first_point && @preview_point
 
         corners = board_corners(@first_point, @preview_point)
+        thickness_vector = normal_vector(corners) * @thickness
+        top_corners = corners.map { |point| point + thickness_vector }
         view.drawing_color = Sketchup::Color.new(184, 115, 51, 90)
         view.draw(GL_QUADS, corners)
+        view.draw(GL_QUADS, top_corners)
+        4.times do |index|
+          next_index = (index + 1) % 4
+          view.draw(GL_QUADS, [corners[index], corners[next_index], top_corners[next_index], top_corners[index]])
+        end
         view.drawing_color = Sketchup::Color.new(90, 55, 30)
         view.draw(GL_LINE_LOOP, corners)
+        view.draw(GL_LINE_LOOP, top_corners)
+        4.times do |index|
+          next_index = (index + 1) % 4
+          view.draw(GL_LINES, [corners[index], top_corners[index]])
+        end
       end
 
       def onCancel(_reason, _view)
@@ -121,6 +133,12 @@ module TTSmatsPro
         corner_d[plane_axes[0]] = first_coordinates[plane_axes[0]]
         corner_d[plane_axes[1]] = second_coordinates[plane_axes[1]]
         [corner_a, corner_b, corner_c, corner_d].map { |coordinates| Geom::Point3d.new(coordinates) }
+      end
+
+      def normal_vector(corners)
+        vector = (corners[1] - corners[0]).cross(corners[3] - corners[0])
+        vector.normalize!
+        vector
       end
 
       def update_prompt(message)
