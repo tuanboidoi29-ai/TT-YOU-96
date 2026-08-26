@@ -9,7 +9,7 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.0.6'
+  VERSION = '1.0.7'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
@@ -19,13 +19,25 @@ module TTSmatsPro
     return if @update_check_running
 
     @update_check_running = true
+    @update_result = nil
     Thread.new do
-      result = fetch_manifest
-      UI.start_timer(0, false) { finish_update_check(result) }
+      @update_result = fetch_manifest
     rescue StandardError => error
-      UI.start_timer(0, false) { finish_update_check(error) }
+      @update_result = error
     end
-    UI.start_timer(0, false) { Sketchup.set_status_text('Đang kiểm tra bản cập nhật TT -SMATS PRO...') }
+    Sketchup.set_status_text('Đang kiểm tra bản cập nhật TT -SMATS PRO...')
+    wait_for_update_result
+  end
+
+  def wait_for_update_result
+    UI.start_timer(0.1, true) do
+      next unless @update_result
+
+      timer = @update_timer
+      UI.stop_timer(timer) if timer
+      @update_timer = nil
+      finish_update_check(@update_result)
+    end.tap { |timer| @update_timer = timer }
   end
 
   def fetch_manifest
@@ -62,23 +74,41 @@ module TTSmatsPro
 
   def download_update(download_url)
     @update_check_running = true
+    @update_result = nil
     Thread.new do
-      archive_path = download_archive(download_url)
-      UI.start_timer(0, false) { install_update(archive_path) }
+      @update_result = download_archive(download_url)
     rescue StandardError => error
-      UI.start_timer(0, false) { finish_update_check(error) }
+      @update_result = error
     end
     Sketchup.set_status_text('Đang tải bản cập nhật TT -SMATS PRO...')
+    UI.start_timer(0.1, true) do
+      next unless @update_result
+
+      timer = @download_timer
+      UI.stop_timer(timer) if timer
+      @download_timer = nil
+      if @update_result.is_a?(Exception)
+        finish_update_check(@update_result)
+      else
+        install_update(@update_result)
+      end
+    end.tap { |timer| @download_timer = timer }
   end
 
   def download_archive(download_url)
     raise 'Manifest chưa có đường dẫn RBZ hợp lệ' unless download_url.start_with?('https://')
 
     uri = URI(download_url)
-    request = Net::HTTP::Get.new(uri)
-    request['User-Agent'] = "TT-SMATS-PRO/#{VERSION}"
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 5, read_timeout: 30) do |http|
-      http.request(request)
+    response = nil
+    5.times do
+      request = Net::HTTP::Get.new(uri)
+      request['User-Agent'] = "TT-SMATS-PRO/#{VERSION}"
+      response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 30) do |http|
+        http.request(request)
+      end
+      break unless response.is_a?(Net::HTTPRedirection)
+
+      uri = URI(response['location'])
     end
     raise "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
