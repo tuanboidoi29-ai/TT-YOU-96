@@ -33,14 +33,19 @@ module TTSmatsPro
         return unless key == 9
 
         @plane_index = @plane_index.nil? ? 0 : (@plane_index + 1) % @planes.length
-        update_prompt('Click góc chéo thứ nhất của ván AUTU') unless @first_point
+        update_prompt(@first_point ? 'Click góc chéo đối diện để tạo ván' : 'Click góc chéo thứ nhất của ván AUTU')
+        _view.invalidate
       end
 
       def onLButtonDown(_flags, x, y, view)
         point = view.inputpoint(x, y).position
         if @first_point
-          create_board(@first_point, point)
-          Sketchup.active_model.select_tool(nil)
+          if create_board(@first_point, point)
+            @first_point = nil
+            @preview_point = nil
+            update_prompt('Click góc chéo thứ nhất của ván AUTU tiếp theo')
+            view.invalidate
+          end
         else
           @first_point = point
           update_prompt('Click góc chéo đối diện để tạo ván')
@@ -96,9 +101,11 @@ module TTSmatsPro
         face.pushpull(@thickness)
         group.name = 'Ván AUTU'
         model.commit_operation
+        true
       rescue StandardError => error
         model.abort_operation if model&.operation?
         UI.messagebox("Không thể tạo ván.\n#{error.message}")
+        false
       end
 
       def board_corners(first_point, second_point)

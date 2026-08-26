@@ -9,7 +9,7 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.0.5'
+  VERSION = '1.0.6'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
@@ -110,6 +110,7 @@ module TTSmatsPro
   unless file_loaded?(__FILE__)
     menu = UI.menu('Extensions').add_submenu('TT -SMATS PRO RBZ')
     menu.add_item('Vẽ ván AUTU') { CreateBoard.start }
+    menu.add_item('Đổi độ dày và tiếp tục vẽ') { CreateBoard.start }
     menu.add_separator
     menu.add_item('Kiểm tra bản cập nhật') { start_update_check }
     menu.add_item('Thông tin plugin') { show_about }
