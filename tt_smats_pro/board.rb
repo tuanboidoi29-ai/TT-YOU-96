@@ -73,14 +73,14 @@ module TTSmatsPro
         thickness_vector = normal_vector(corners) * @thickness
         top_corners = corners.map { |point| point + thickness_vector }
         view.line_width = 3
-        view.drawing_color = [255, 128, 0, 95]
+        view.drawing_color = [255, 128, 0, 255]
         view.draw(GL_QUADS, corners)
         view.draw(GL_QUADS, top_corners)
         4.times do |index|
           next_index = (index + 1) % 4
           view.draw(GL_QUADS, [corners[index], corners[next_index], top_corners[next_index], top_corners[index]])
         end
-        view.drawing_color = [255, 102, 0]
+        view.drawing_color = [204, 76, 0, 255]
         view.draw(GL_LINE_STRIP, corners + [corners.first])
         view.draw(GL_LINE_STRIP, top_corners + [top_corners.first])
         4.times do |index|
