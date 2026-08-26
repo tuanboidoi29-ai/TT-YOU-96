@@ -55,6 +55,18 @@ module TTSmatsPro
         point = view.inputpoint(x, y).position
         dimensions = rectangle_dimensions(@first_point, point)
         update_prompt("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo")
+        @preview_point = point
+        view.invalidate
+      end
+
+      def draw(view)
+        return unless @first_point && @preview_point
+
+        corners = board_corners(@first_point, @preview_point)
+        view.drawing_color = Sketchup::Color.new(184, 115, 51, 90)
+        view.draw(GL_QUADS, corners)
+        view.drawing_color = Sketchup::Color.new(90, 55, 30)
+        view.draw(GL_LINE_LOOP, corners)
       end
 
       def onCancel(_reason, _view)
@@ -70,11 +82,27 @@ module TTSmatsPro
       end
 
       def create_board(first_point, second_point)
-        delta = second_point - first_point
-        differences = [delta.x.abs, delta.y.abs, delta.z.abs]
         plane_axes = selected_plane(first_point, second_point)
+        corners = board_corners(first_point, second_point)
+        differences = [second_point.x - first_point.x, second_point.y - first_point.y, second_point.z - first_point.z].map(&:abs)
         raise 'Hai điểm phải khác nhau' if differences[plane_axes[0]] <= 0.001 || differences[plane_axes[1]] <= 0.001
 
+        model = Sketchup.active_model
+        model.start_operation('Vẽ ván AUTU từ 2 điểm chéo', true)
+        group = model.active_entities.add_group
+        face = group.entities.add_face(corners)
+        raise 'Không tạo được mặt ván từ hai điểm chéo' unless face
+
+        face.pushpull(@thickness)
+        group.name = 'Ván AUTU'
+        model.commit_operation
+      rescue StandardError => error
+        model.abort_operation if model&.operation?
+        UI.messagebox("Không thể tạo ván.\n#{error.message}")
+      end
+
+      def board_corners(first_point, second_point)
+        plane_axes = selected_plane(first_point, second_point)
         first_coordinates = [first_point.x, first_point.y, first_point.z]
         second_coordinates = [second_point.x, second_point.y, second_point.z]
         corner_a = first_coordinates.dup
@@ -85,19 +113,7 @@ module TTSmatsPro
         corner_b[plane_axes[1]] = first_coordinates[plane_axes[1]]
         corner_d[plane_axes[0]] = first_coordinates[plane_axes[0]]
         corner_d[plane_axes[1]] = second_coordinates[plane_axes[1]]
-
-        model = Sketchup.active_model
-        model.start_operation('Vẽ ván AUTU từ 2 điểm chéo', true)
-        group = model.active_entities.add_group
-        face = group.entities.add_face([corner_a, corner_b, corner_c, corner_d])
-        raise 'Không tạo được mặt ván từ hai điểm chéo' unless face
-
-        face.pushpull(@thickness)
-        group.name = 'Ván AUTU'
-        model.commit_operation
-      rescue StandardError => error
-        model.abort_operation if model&.operation?
-        UI.messagebox("Không thể tạo ván.\n#{error.message}")
+        [corner_a, corner_b, corner_c, corner_d].map { |coordinates| Geom::Point3d.new(coordinates) }
       end
 
       def update_prompt(message)

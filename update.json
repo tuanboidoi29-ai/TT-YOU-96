@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
-  "download_url": "https://github.com/tuanboidoi29-ai/TT-YOU-96/releases/download/v1.0.3/TT-SMATS-PRO-RBZ-v1.0.3.rbz",
-  "notes": "Thêm phím Tab để đổi hướng vẽ XY, XZ, YZ; mặc định vẫn tự nhận diện không gian."
+  "version": "1.0.4",
+  "download_url": "https://github.com/tuanboidoi29-ai/TT-YOU-96/releases/download/v1.0.4/TT-SMATS-PRO-RBZ-v1.0.4.rbz",
+  "notes": "Thêm preview ván trực tiếp trong View 3D khi rê chuột."
 }
