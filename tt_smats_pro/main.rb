@@ -9,7 +9,7 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.1.1'
+  VERSION = '1.1.2'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
@@ -139,8 +139,12 @@ module TTSmatsPro
 
     loader_path = File.join(plugins_path, 'tt_smats_pro.rb')
     runtime_path = File.join(plugins_path, 'tt_smats_pro', 'main.rb')
-    Sketchup.load(loader_path) if File.exist?(loader_path)
-    Sketchup.load(runtime_path) if File.exist?(runtime_path)
+    raise 'Không tìm thấy loader sau khi cài cập nhật' unless File.file?(loader_path)
+    raise 'Không tìm thấy runtime sau khi cài cập nhật' unless File.file?(runtime_path)
+
+    Kernel.load(loader_path)
+    Kernel.load(runtime_path)
+    raise 'Runtime mới chưa được nạp' unless TTSmatsPro::VERSION == VERSION
   end
 
   def show_about
