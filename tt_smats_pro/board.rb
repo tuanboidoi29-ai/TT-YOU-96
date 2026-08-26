@@ -5,40 +5,46 @@ module TTSmatsPro
     extend self
 
     def start
-      values = UI.inputbox(['Rộng', 'Dày'], ['600mm', '18mm'], 'Kích thước ván AUTU')
+      values = UI.inputbox(['Độ dày'], ['18mm'], 'Độ dày ván AUTU')
       return unless values
 
-      lengths = values.map { |value| Sketchup.parse_length(value.to_s) }
-      if lengths.any? { |length| !length || length <= 0 }
-        UI.messagebox('Kích thước phải lớn hơn 0 và có đơn vị hợp lệ.')
+      thickness = Sketchup.parse_length(values.first.to_s)
+      if !thickness || thickness <= 0
+        UI.messagebox('Độ dày phải lớn hơn 0 và có đơn vị hợp lệ.')
         return
       end
-      Sketchup.active_model.select_tool(PlacementTool.new(*lengths))
+      Sketchup.active_model.select_tool(PlacementTool.new(thickness))
     end
 
     class PlacementTool
-      def initialize(width, thickness)
-        @width = width
+      def initialize(thickness)
         @thickness = thickness
-        @start_point = nil
+        @first_point = nil
       end
 
       def activate
-        Sketchup.set_status_text('Click điểm đầu của ván AUTU', SB_PROMPT)
+        Sketchup.set_status_text('Click góc chéo thứ nhất của ván AUTU', SB_PROMPT)
       end
 
       def onLButtonDown(_flags, x, y, view)
         point = view.inputpoint(x, y).position
-        if @start_point
-          create_board(@start_point, point)
+        if @first_point
+          create_board(@first_point, point)
           Sketchup.active_model.select_tool(nil)
         else
-          @start_point = point
-          Sketchup.set_status_text('Click điểm cuối để xác định chiều dài và hướng ván', SB_PROMPT)
+          @first_point = point
+          Sketchup.set_status_text('Click góc chéo đối diện để tạo ván', SB_PROMPT)
         end
       rescue StandardError => error
-        model.abort_operation if model&.operation?
         UI.messagebox("Không thể tạo ván.\n#{error.message}")
+      end
+
+      def onMouseMove(_flags, x, y, view)
+        return unless @first_point
+
+        point = view.inputpoint(x, y).position
+        dimensions = rectangle_dimensions(@first_point, point)
+        Sketchup.set_status_text("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo", SB_PROMPT)
       end
 
       def onCancel(_reason, _view)
@@ -47,28 +53,35 @@ module TTSmatsPro
 
       private
 
-      def create_board(start_point, end_point)
-        direction = end_point - start_point
-        raise 'Hai điểm phải khác nhau' if direction.length <= 0.001
+      def rectangle_dimensions(first_point, second_point)
+        delta = second_point - first_point
+        axes = [delta.x.abs, delta.y.abs, delta.z.abs].sort
+        [axes[2], axes[1]]
+      end
 
-        direction.normalize!
-        reference_axis = direction.parallel?(Z_AXIS) ? Y_AXIS : Z_AXIS
-        side_direction = direction.cross(reference_axis)
-        side_direction.normalize!
-        side_offset = side_direction.clone
-        side_offset.length = @width / 2.0
+      def create_board(first_point, second_point)
+        delta = second_point - first_point
+        differences = [delta.x.abs, delta.y.abs, delta.z.abs]
+        normal_axis = differences.each_index.min_by { |index| differences[index] }
+        plane_axes = (0..2).to_a - [normal_axis]
+        raise 'Hai điểm phải khác nhau' if differences[plane_axes[0]] <= 0.001 || differences[plane_axes[1]] <= 0.001
+
+        first_coordinates = [first_point.x, first_point.y, first_point.z]
+        second_coordinates = [second_point.x, second_point.y, second_point.z]
+        corner_a = first_coordinates.dup
+        corner_b = first_coordinates.dup
+        corner_c = second_coordinates.dup
+        corner_d = second_coordinates.dup
+        corner_b[plane_axes[0]] = second_coordinates[plane_axes[0]]
+        corner_b[plane_axes[1]] = first_coordinates[plane_axes[1]]
+        corner_d[plane_axes[0]] = first_coordinates[plane_axes[0]]
+        corner_d[plane_axes[1]] = second_coordinates[plane_axes[1]]
 
         model = Sketchup.active_model
-        model.start_operation('Vẽ ván AUTU theo 2 điểm', true)
+        model.start_operation('Vẽ ván AUTU từ 2 điểm chéo', true)
         group = model.active_entities.add_group
-        points = [
-          start_point.offset(side_offset, -1),
-          end_point.offset(side_offset, -1),
-          end_point.offset(side_offset),
-          start_point.offset(side_offset)
-        ]
-        face = group.entities.add_face(points)
-        raise 'Không tạo được mặt ván từ hai điểm' unless face
+        face = group.entities.add_face([corner_a, corner_b, corner_c, corner_d])
+        raise 'Không tạo được mặt ván từ hai điểm chéo' unless face
 
         face.pushpull(@thickness)
         group.name = 'Ván AUTU'
