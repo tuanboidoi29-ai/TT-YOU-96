@@ -9,7 +9,7 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.0.8'
+  VERSION = '1.0.9'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
   MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
 
@@ -124,13 +124,23 @@ module TTSmatsPro
     installed = Sketchup.install_from_archive(archive_path)
     File.delete(archive_path) if File.exist?(archive_path)
     if installed
-      Sketchup.load(File.join(__dir__, 'main.rb'))
-      UI.messagebox('Đã cập nhật TT -SMATS PRO và nạp lại hệ thống thành công.')
+      reload_system
+      UI.messagebox('Đã cập nhật và nạp lại TT -SMATS PRO thành công.')
     else
       UI.messagebox('SketchUp không cài được bản cập nhật RBZ.')
     end
   rescue StandardError => error
     UI.messagebox("Cập nhật thất bại.\n#{error.message}")
+  end
+
+  def reload_system
+    plugins_path = Sketchup.find_support_file('Plugins')
+    raise 'Không tìm thấy thư mục Plugins của SketchUp' unless plugins_path
+
+    loader_path = File.join(plugins_path, 'tt_smats_pro.rb')
+    runtime_path = File.join(plugins_path, 'tt_smats_pro', 'main.rb')
+    Sketchup.load(loader_path) if File.exist?(loader_path)
+    Sketchup.load(runtime_path) if File.exist?(runtime_path)
   end
 
   def show_about

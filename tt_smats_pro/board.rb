@@ -70,14 +70,14 @@ module TTSmatsPro
         corners = board_corners(@first_point, @preview_point)
         thickness_vector = normal_vector(corners) * @thickness
         top_corners = corners.map { |point| point + thickness_vector }
-        view.drawing_color = Sketchup::Color.new(184, 115, 51, 90)
+        view.drawing_color = Sketchup::Color.new(255, 128, 0, 95)
         view.draw(GL_QUADS, corners)
         view.draw(GL_QUADS, top_corners)
         4.times do |index|
           next_index = (index + 1) % 4
           view.draw(GL_QUADS, [corners[index], corners[next_index], top_corners[next_index], top_corners[index]])
         end
-        view.drawing_color = Sketchup::Color.new(90, 55, 30)
+        view.drawing_color = Sketchup::Color.new(255, 102, 0)
         view.draw(GL_LINE_LOOP, corners)
         view.draw(GL_LINE_LOOP, top_corners)
         4.times do |index|
