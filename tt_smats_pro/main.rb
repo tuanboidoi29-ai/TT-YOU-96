@@ -9,9 +9,9 @@ require 'tempfile'
 require File.join(__dir__, 'board')
 
 module TTSmatsPro
-  VERSION = '1.1.4'
+  VERSION = '1.1.5'
   REPOSITORY = 'tuanboidoi29-ai/TT-YOU-96'
-  MANIFEST_URL = "https://api.github.com/repos/#{REPOSITORY}/contents/update.json?ref=main"
+  MANIFEST_URL = "https://raw.githubusercontent.com/#{REPOSITORY}/main/update.json"
 
   module_function
 
@@ -41,10 +41,10 @@ module TTSmatsPro
   end
 
   def fetch_manifest
-    uri = URI(MANIFEST_URL)
+    uri = URI("#{MANIFEST_URL}?t=#{Time.now.to_i}")
     request = Net::HTTP::Get.new(uri)
     request['User-Agent'] = "TT-SMATS-PRO/#{VERSION}"
-    request['Accept'] = 'application/vnd.github.raw+json'
+    request['Cache-Control'] = 'no-cache'
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', open_timeout: 5, read_timeout: 8) do |http|
       http.request(request)
     end
