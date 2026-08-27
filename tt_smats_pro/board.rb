@@ -40,9 +40,8 @@ module TTSmatsPro
 
       def onLButtonDown(_flags, x, y, view)
         @input_point.pick(view, x, y)
-        return unless @input_point.valid?
-
-        point = @input_point.position
+        point = @input_point.valid? ? @input_point.position : view.inputpoint(x, y).position
+        return unless point
         if @first_point
           if create_board(@first_point, point)
             @first_point = nil
@@ -75,7 +74,9 @@ module TTSmatsPro
 
       def draw(view)
         @input_point.draw(view) if @input_point.valid?
-        return unless @first_point && @preview_point
+        return unless @first_point
+
+        @preview_point ||= default_preview_point(@first_point)
 
         corners = board_corners(@first_point, @preview_point)
         return if corners[0].distance(corners[1]) <= 0.001 || corners[0].distance(corners[3]) <= 0.001
