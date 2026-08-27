@@ -82,20 +82,30 @@ module TTSmatsPro
 
         thickness_vector = normal_vector(corners) * @thickness
         top_corners = corners.map { |point| point + thickness_vector }
-        view.line_width = 3
-        view.drawing_color = [255, 128, 0, 70]
-        view.draw(GL_QUADS, corners)
-        view.draw(GL_QUADS, top_corners)
+        draw_preview_faces(view, corners, top_corners)
+        draw_preview_edges(view, corners, top_corners)
+      end
+
+      def draw_preview_faces(view, corners, top_corners)
+        view.drawing_color = [255, 128, 0, 110]
+        view.draw(GL_TRIANGLES, [corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]])
+        view.draw(GL_TRIANGLES, [top_corners[0], top_corners[2], top_corners[1], top_corners[0], top_corners[3], top_corners[2]])
         4.times do |index|
           next_index = (index + 1) % 4
-          view.draw(GL_QUADS, [corners[index], corners[next_index], top_corners[next_index], top_corners[index]])
+          side = [corners[index], corners[next_index], top_corners[next_index], corners[index]]
+          view.draw(GL_TRIANGLES, [side[0], side[1], side[2], side[0], side[2], side[3]])
         end
+      end
+
+      def draw_preview_edges(view, corners, top_corners)
+        view.line_width = 4
         view.drawing_color = [255, 110, 0, 255]
         view.draw(GL_LINE_STRIP, corners + [corners.first])
         view.draw(GL_LINE_STRIP, top_corners + [top_corners.first])
         4.times do |index|
           next_index = (index + 1) % 4
           view.draw(GL_LINES, [corners[index], top_corners[index]])
+          view.draw(GL_LINES, [corners[index], corners[next_index]])
         end
       end
 
