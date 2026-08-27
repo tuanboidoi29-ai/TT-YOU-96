@@ -21,6 +21,7 @@ module TTSmatsPro
         @thickness = thickness
         @first_point = nil
         @plane_index = nil
+        @input_point = Sketchup::InputPoint.new
         @planes = [[0, 1], [0, 2], [1, 2]]
         @plane_names = ['Mặt phẳng Đỏ-Xanh lá (XY)', 'Mặt phẳng Đỏ-Xanh dương (XZ)', 'Mặt phẳng Xanh lá-Xanh dương (YZ)']
       end
@@ -38,7 +39,10 @@ module TTSmatsPro
       end
 
       def onLButtonDown(_flags, x, y, view)
-        point = view.inputpoint(x, y).position
+        @input_point.pick(view, x, y)
+        return unless @input_point.valid?
+
+        point = @input_point.position
         if @first_point
           if create_board(@first_point, point)
             @first_point = nil
@@ -48,7 +52,7 @@ module TTSmatsPro
           end
         else
           @first_point = point
-          @preview_point = point
+          @preview_point = nil
           update_prompt('Click góc chéo đối diện để tạo ván')
           view.invalidate
         end
@@ -57,30 +61,36 @@ module TTSmatsPro
       end
 
       def onMouseMove(_flags, x, y, view)
+        @input_point.pick(view, x, y)
+        view.invalidate
+        return unless @input_point.valid?
+
         return unless @first_point
 
-        point = view.inputpoint(x, y).position
+        point = @input_point.position
         dimensions = rectangle_dimensions(@first_point, point)
         update_prompt("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo")
         @preview_point = point
-        view.invalidate
       end
 
       def draw(view)
+        @input_point.draw(view) if @input_point.valid?
         return unless @first_point && @preview_point
 
         corners = board_corners(@first_point, @preview_point)
+        return if corners[0].distance(corners[1]) <= 0.001 || corners[0].distance(corners[3]) <= 0.001
+
         thickness_vector = normal_vector(corners) * @thickness
         top_corners = corners.map { |point| point + thickness_vector }
         view.line_width = 3
-        view.drawing_color = [255, 128, 0, 255]
+        view.drawing_color = [255, 128, 0, 70]
         view.draw(GL_QUADS, corners)
         view.draw(GL_QUADS, top_corners)
         4.times do |index|
           next_index = (index + 1) % 4
           view.draw(GL_QUADS, [corners[index], corners[next_index], top_corners[next_index], top_corners[index]])
         end
-        view.drawing_color = [204, 76, 0, 255]
+        view.drawing_color = [255, 110, 0, 255]
         view.draw(GL_LINE_STRIP, corners + [corners.first])
         view.draw(GL_LINE_STRIP, top_corners + [top_corners.first])
         4.times do |index|
