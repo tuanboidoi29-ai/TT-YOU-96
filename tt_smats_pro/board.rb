@@ -52,7 +52,7 @@ module TTSmatsPro
           end
         else
           @first_point = point
-          @preview_point = nil
+          @preview_point = default_preview_point(point)
           update_prompt('Click góc chéo đối diện để tạo ván')
           view.invalidate
         end
@@ -63,11 +63,11 @@ module TTSmatsPro
       def onMouseMove(_flags, x, y, view)
         @input_point.pick(view, x, y)
         view.invalidate
-        return unless @input_point.valid?
-
         return unless @first_point
 
-        point = @input_point.position
+        point = @input_point.valid? ? @input_point.position : view.inputpoint(x, y).position
+        return unless point
+
         dimensions = rectangle_dimensions(@first_point, point)
         update_prompt("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo")
         @preview_point = point
@@ -107,6 +107,16 @@ module TTSmatsPro
           view.draw(GL_LINES, [corners[index], top_corners[index]])
           view.draw(GL_LINES, [corners[index], corners[next_index]])
         end
+      end
+
+      def default_preview_point(point)
+        axes = @plane_index ? @planes[@plane_index] : [0, 1]
+        length = Sketchup.parse_length('1000mm')
+        width = Sketchup.parse_length('500mm')
+        coordinates = [point.x, point.y, point.z]
+        coordinates[axes[0]] += length
+        coordinates[axes[1]] += width
+        Geom::Point3d.new(coordinates)
       end
 
       def onCancel(_reason, _view)
