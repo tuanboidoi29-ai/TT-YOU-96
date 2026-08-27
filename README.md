@@ -5,7 +5,7 @@ Extension SketchUp viết bằng Ruby, giao diện tiếng Việt.
 ## Chức năng
 
 - `Vẽ ván AUTU`: nhập Độ dày, click đúng hai điểm chéo trong View 3D. Plugin tự nhận diện mặt phẳng, chiều dài và chiều rộng; di chuột hiển thị kích thước trước khi click thứ hai để tạo ván.
-- Nhấn `Tab` trong lúc vẽ để đổi hướng: tự động, XY, XZ, YZ.
+- Nhấn `Tab` trong lúc vẽ để đổi chiều tạo ván: vào trong hoặc ra ngoài.
 - Sau mỗi ván, công cụ tự chờ ván tiếp theo với cùng độ dày. Chọn `Đổi độ dày và tiếp tục vẽ` khi cần nhập độ dày mới.
 - Preview hiển thị dạng khung khối 3D gồm mặt trên, mặt dưới và cạnh bên theo độ dày.
 - `Kiểm tra bản cập nhật`: gọi manifest GitHub không đồng bộ, không làm treo SketchUp khi khởi động.

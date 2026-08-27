@@ -21,6 +21,7 @@ module TTSmatsPro
         @thickness = thickness
         @first_point = nil
         @plane_index = nil
+        @reverse_thickness = false
         @input_point = Sketchup::InputPoint.new
         @planes = [[0, 1], [0, 2], [1, 2]]
         @plane_names = ['Mặt phẳng Đỏ-Xanh lá (XY)', 'Mặt phẳng Đỏ-Xanh dương (XZ)', 'Mặt phẳng Xanh lá-Xanh dương (YZ)']
@@ -30,12 +31,12 @@ module TTSmatsPro
         update_prompt('Click góc chéo thứ nhất của ván AUTU')
       end
 
-      def onKeyDown(key, _repeat, _flags, _view)
+      def onKeyDown(key, _repeat, _flags, view)
         return unless key == 9
 
-        @plane_index = @plane_index.nil? ? 0 : (@plane_index + 1) % @planes.length
+        @reverse_thickness = !@reverse_thickness
         update_prompt(@first_point ? 'Click góc chéo đối diện để tạo ván' : 'Click góc chéo thứ nhất của ván AUTU')
-        _view.invalidate
+        view.invalidate
       end
 
       def onLButtonDown(_flags, x, y, view)
@@ -81,7 +82,7 @@ module TTSmatsPro
         corners = board_corners(@first_point, @preview_point)
         return if corners[0].distance(corners[1]) <= 0.001 || corners[0].distance(corners[3]) <= 0.001
 
-        thickness_vector = normal_vector(corners) * @thickness
+        thickness_vector = normal_vector(corners) * signed_thickness
         top_corners = corners.map { |point| point + thickness_vector }
         draw_preview_faces(view, corners, top_corners)
         draw_preview_edges(view, corners, top_corners)
@@ -146,7 +147,7 @@ module TTSmatsPro
         face = group.entities.add_face(corners)
         raise 'Không tạo được mặt ván từ hai điểm chéo' unless face
 
-        face.pushpull(@thickness)
+        face.pushpull(signed_thickness)
         group.name = 'Ván AUTU'
         model.commit_operation
         true
@@ -178,8 +179,13 @@ module TTSmatsPro
       end
 
       def update_prompt(message)
-        direction = @plane_index ? @plane_names[@plane_index] : 'Tự động theo không gian'
-        Sketchup.set_status_text("#{message} | Tab: đổi hướng (#{direction})", SB_PROMPT)
+        plane = @plane_index ? @plane_names[@plane_index] : 'Tự động theo không gian'
+        side = @reverse_thickness ? 'Ra ngoài' : 'Vào trong'
+        Sketchup.set_status_text("#{message} | Tab: đổi hướng #{side} | Mặt: #{plane}", SB_PROMPT)
+      end
+
+      def signed_thickness
+        @reverse_thickness ? -@thickness : @thickness
       end
 
       def selected_plane(first_point, second_point)
