@@ -25,17 +25,30 @@ module TTSmatsPro
         @input_point = Sketchup::InputPoint.new
         @planes = [[0, 1], [0, 2], [1, 2]]
         @plane_names = ['Mặt phẳng Đỏ-Xanh lá (XY)', 'Mặt phẳng Đỏ-Xanh dương (XZ)', 'Mặt phẳng Xanh lá-Xanh dương (YZ)']
+        @status_message = 'Chọn điểm đầu tiên để bắt đầu ván'
       end
 
       def activate
-        update_prompt('Click góc chéo thứ nhất của ván AUTU')
+        @status_message = 'Click góc chéo thứ nhất của ván AUTU'
+        update_prompt(@status_message)
+      end
+
+      def status_summary(message = @status_message)
+        direction = @reverse_thickness ? 'Ra ngoài' : 'Vào trong'
+        phase = if @first_point
+                  'Đang chọn điểm đối diện'
+                else
+                  'Đang chọn điểm đầu'
+                end
+        "#{message} | #{phase} | Tab=#{direction} | Esc=hủy"
       end
 
       def onKeyDown(key, _repeat, _flags, view)
         return unless key == 9
 
         @reverse_thickness = !@reverse_thickness
-        update_prompt(@first_point ? 'Click góc chéo đối diện để tạo ván' : 'Click góc chéo thứ nhất của ván AUTU')
+        @status_message = @first_point ? 'Click góc chéo đối diện để tạo ván' : 'Click góc chéo thứ nhất của ván AUTU'
+        update_prompt(@status_message)
         view.invalidate
       end
 
@@ -47,13 +60,15 @@ module TTSmatsPro
           if create_board(@first_point, point)
             @first_point = nil
             @preview_point = nil
-            update_prompt('Click góc chéo thứ nhất của ván AUTU tiếp theo')
+            @status_message = 'Ván đã tạo. Click góc chéo thứ nhất của ván AUTU tiếp theo'
+            update_prompt(@status_message)
             view.invalidate
           end
         else
           @first_point = point
           @preview_point = default_preview_point(point)
-          update_prompt('Click góc chéo đối diện để tạo ván')
+          @status_message = 'Click góc chéo đối diện để tạo ván'
+          update_prompt(@status_message)
           view.invalidate
         end
       rescue StandardError => error
@@ -69,7 +84,8 @@ module TTSmatsPro
         return unless point
 
         dimensions = rectangle_dimensions(@first_point, point)
-        update_prompt("Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo")
+        @status_message = "Dài: #{Sketchup.format_length(dimensions[0])} | Rộng: #{Sketchup.format_length(dimensions[1])} | Click để tạo ván"
+        update_prompt(@status_message)
         @preview_point = point
       end
 
@@ -84,12 +100,25 @@ module TTSmatsPro
 
         thickness_vector = normal_vector(corners) * signed_thickness
         top_corners = corners.map { |point| point + thickness_vector }
+        draw_preview_frame(view, corners, top_corners)
         draw_preview_faces(view, corners, top_corners)
         draw_preview_edges(view, corners, top_corners)
       end
 
+      def draw_preview_frame(view, corners, top_corners)
+        view.line_width = 1
+        view.drawing_color = [255, 153, 51, 180]
+        view.draw(GL_LINE_STRIP, corners + [corners.first])
+        view.draw(GL_LINE_STRIP, top_corners + [top_corners.first])
+        4.times do |index|
+          next_index = (index + 1) % 4
+          view.draw(GL_LINES, [corners[index], top_corners[index]])
+          view.draw(GL_LINES, [corners[index], corners[next_index]])
+        end
+      end
+
       def draw_preview_faces(view, corners, top_corners)
-        view.drawing_color = [255, 128, 0, 110]
+        view.drawing_color = [255, 130, 0, 100]
         view.draw(GL_TRIANGLES, [corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]])
         view.draw(GL_TRIANGLES, [top_corners[0], top_corners[2], top_corners[1], top_corners[0], top_corners[3], top_corners[2]])
         4.times do |index|
@@ -179,9 +208,9 @@ module TTSmatsPro
       end
 
       def update_prompt(message)
+        @status_message = message
         plane = @plane_index ? @plane_names[@plane_index] : 'Tự động theo không gian'
-        side = @reverse_thickness ? 'Ra ngoài' : 'Vào trong'
-        Sketchup.set_status_text("#{message} | Tab: đổi hướng #{side} | Mặt: #{plane}", SB_PROMPT)
+        Sketchup.set_status_text("#{status_summary(message)} | Mặt: #{plane}", SB_PROMPT)
       end
 
       def signed_thickness
