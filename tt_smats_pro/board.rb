@@ -99,9 +99,12 @@ module TTSmatsPro
       def draw(view)
         @input_point.draw(view) if @input_point.valid?
         return unless @first_point
-        return unless preview_available?(view)
+        return unless view
 
         @preview_point ||= default_preview_point(@first_point)
+        if @preview_point == @first_point
+          @preview_point = default_preview_point(@first_point)
+        end
 
         corners = board_corners(@first_point, @preview_point)
         return if corners[0].distance(corners[1]) <= 0.001 || corners[0].distance(corners[3]) <= 0.001
@@ -227,13 +230,8 @@ module TTSmatsPro
 
       def preview_available?(view)
         return false unless view
-        return false unless view.respond_to?(:is_3d?)
 
-        begin
-          view.is_3d?
-        rescue StandardError
-          false
-        end
+        true
       end
 
       def selected_plane(first_point, second_point)

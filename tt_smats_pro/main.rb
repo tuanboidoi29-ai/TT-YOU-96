@@ -56,17 +56,22 @@ module TTSmatsPro
   def finish_update_check(result)
     @update_check_running = false
     if result.is_a?(Exception)
-      UI.messagebox("Không thể kiểm tra cập nhật.\n#{result.message}")
+      UI.messagebox("Không thể kiểm tra cập nhật.\n#{result.message}\n\nVui lòng thử lại sau.")
       return
     end
 
     version = result['version'].to_s
-    if version.empty? || Gem::Version.new(version) <= Gem::Version.new(VERSION)
-      UI.messagebox("Bạn đang dùng phiên bản mới nhất (#{VERSION}).")
+    if version.empty?
+      UI.messagebox("Không nhận được thông tin phiên bản mới từ máy chủ.\nVui lòng thử lại sau.")
       return
     end
 
-    message = "Có phiên bản #{version} mới.\n\n#{result['notes']}\n\nTải và cài đặt ngay?"
+    if Gem::Version.new(version) <= Gem::Version.new(VERSION)
+      UI.messagebox("Đang dùng phiên bản mới nhất.\n\nPhiên bản hiện tại: #{VERSION}\nPhiên bản máy chủ: #{version}")
+      return
+    end
+
+    message = "Có phiên bản mới: #{version}\n\n#{result['notes']}\n\nBạn muốn tải và cài đặt ngay?"
     return unless UI.messagebox(message, MB_YESNO) == IDYES
 
     download_update(result['download_url'].to_s)
@@ -174,6 +179,8 @@ module TTSmatsPro
     update_command.large_icon = File.join(__dir__, 'icons', 'update.svg')
     toolbar.add_item(update_command)
     toolbar.show
+
+    UI.start_timer(0.5, false) { start_update_check }
 
     file_loaded(__FILE__)
   end
