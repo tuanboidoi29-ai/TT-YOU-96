@@ -80,6 +80,13 @@ module TTSmatsPro
         view.invalidate
         return unless @first_point
 
+        unless preview_available?(view)
+          @status_message = 'Chuyển sang View 3D để xem trước ván'
+          update_prompt(@status_message)
+          @preview_point = nil
+          return
+        end
+
         point = @input_point.valid? ? @input_point.position : view.inputpoint(x, y).position
         return unless point
 
@@ -92,6 +99,7 @@ module TTSmatsPro
       def draw(view)
         @input_point.draw(view) if @input_point.valid?
         return unless @first_point
+        return unless preview_available?(view)
 
         @preview_point ||= default_preview_point(@first_point)
 
@@ -215,6 +223,17 @@ module TTSmatsPro
 
       def signed_thickness
         @reverse_thickness ? -@thickness : @thickness
+      end
+
+      def preview_available?(view)
+        return false unless view
+        return false unless view.respond_to?(:is_3d?)
+
+        begin
+          view.is_3d?
+        rescue StandardError
+          false
+        end
       end
 
       def selected_plane(first_point, second_point)

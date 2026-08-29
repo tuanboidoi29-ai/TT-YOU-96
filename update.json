@@ -1,5 +1,5 @@
 {
-  "version": "1.1.9",
-  "download_url": "https://github.com/tuanboidoi29-ai/TT-YOU-96/releases/download/v1.1.9/TT-SMATS-PRO-RBZ-v1.1.9.rbz",
-  "notes": "Tối ưu UX vẽ ván: preview rõ hơn, status bar hướng dẫn từng bước, Tab/Esc rõ ràng, và giai đoạn tạo ván được cải thiện."
+  "version": "1.2.0",
+  "download_url": "https://github.com/tuanboidoi29-ai/TT-YOU-96/releases/download/v1.2.0/TT-SMATS-PRO-RBZ-v1.2.0.rbz",
+  "notes": "Cập nhật điều kiện hiển thị preview ván: chỉ xem trước khi ở View 3D hợp lệ, có cảnh báo rõ khi đang ở view không phù hợp, và cải thiện UX vẽ ván."
 }
